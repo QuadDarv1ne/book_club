@@ -21,10 +21,21 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Run tests
+        env:
+          CI: true
+        run: npm test
+
       - name: Generate Prisma client
         env:
           DATABASE_URL: "postgresql://user:pass@localhost:5432/db"
         run: npm run prisma:generate
+
+      - name: Deploy Prisma migrations (optional)
+        if: ${{ secrets.DATABASE_URL != '' }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: npm run prisma:migrate:deploy
 
       - name: Build
         run: npm run build
