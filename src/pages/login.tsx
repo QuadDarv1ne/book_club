@@ -13,6 +13,16 @@ export default function Login() {
     e.preventDefault()
     setError(null)
     setLoading(true)
+    if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
+      setError('Введите корректный email')
+      setLoading(false)
+      return
+    }
+    if (!password) {
+      setError('Введите пароль')
+      setLoading(false)
+      return
+    }
     try {
       const res: any = await signIn('credentials', { redirect: false, email, password })
       setLoading(false)
@@ -28,6 +38,8 @@ export default function Login() {
     }
   }
 
+  const isValid = !!email && !!password && /^\S+@\S+\.\S+$/.test(email)
+
   return (
     <main style={{ padding: 24 }}>
       <h1>Вход</h1>
@@ -40,7 +52,7 @@ export default function Login() {
 
         {error && <div style={{ color: 'red', marginBottom: 12 }}>{error}</div>}
 
-        <button type="submit" disabled={loading}>{loading ? 'Вход...' : 'Войти'}</button>
+        <button type="submit" disabled={loading || !isValid}>{loading ? 'Вход...' : 'Войти'}</button>
       </form>
     </main>
   )
