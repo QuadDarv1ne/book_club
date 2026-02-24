@@ -1,27 +1,17 @@
 import NextAuth from 'next-auth'
-import CredentialsProvider from 'next-auth/providers/credentials'
+import GithubProvider from 'next-auth/providers/github'
+import { PrismaAdapter } from '@next-auth/prisma-adapter'
+import { prisma } from '../../../lib/prisma'
 
-// Пример минимальной конфигурации NextAuth.
-// Для продакшена рекомендуем использовать провайдеры OAuth (GitHub, Google) и/или адаптер Prisma.
-
+// Конфигурация NextAuth с PrismaAdapter и GitHub провайдером.
 export default NextAuth({
+  adapter: PrismaAdapter(prisma),
   providers: [
-    CredentialsProvider({
-      name: 'Credentials',
-      credentials: {
-        email: { label: 'Email', type: 'text' },
-        password: { label: 'Password', type: 'password' }
-      },
-      async authorize(credentials) {
-        // Здесь добавьте логику проверки пользователя (по базе данных).
-        // В демо-режиме возвращаем фиктивного пользователя при наличии email.
-        if (credentials?.email) {
-          return { id: 'demo', name: 'Demo User', email: credentials.email }
-        }
-        return null
-      }
+    GithubProvider({
+      clientId: process.env.GITHUB_ID || '',
+      clientSecret: process.env.GITHUB_SECRET || ''
     })
   ],
   secret: process.env.NEXTAUTH_SECRET,
-  session: { strategy: 'jwt' }
+  session: { strategy: 'database' }
 })
