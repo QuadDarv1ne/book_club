@@ -8,9 +8,9 @@
     "start": "next start",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev --name init",
-    "prisma:migrate:deploy": "prisma migrate deploy",
     "prisma:seed": "node prisma/seed.js"
   },
+  "test": "jest --passWithNoTests",
   "dependencies": {
     "next": "latest",
     "react": "latest",
@@ -30,6 +30,10 @@
   "devDependencies": {
     "typescript": "latest",
     "@types/react": "latest",
-    "@types/node": "latest"
+    "@types/node": "latest",
+    "jest": "^29.0.0",
+    "ts-jest": "^29.0.0",
+    "@types/jest": "^29.0.0",
+    "node-mocks-http": "^1.11.0"
   }
 }
