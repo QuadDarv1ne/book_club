@@ -4,13 +4,13 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "test": "jest --passWithNoTests",
     "build": "next build",
     "start": "next start",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev --name init",
     "prisma:seed": "node prisma/seed.js"
   },
-  "test": "jest --passWithNoTests",
   "dependencies": {
     "next": "latest",
     "react": "latest",
