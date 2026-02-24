@@ -14,6 +14,17 @@ export default function Register() {
     e.preventDefault()
     setError(null)
     setLoading(true)
+    // client-side validation
+    if (!validateEmail(email)) {
+      setError('Некорректный email')
+      setLoading(false)
+      return
+    }
+    if (password.length < 8) {
+      setError('Пароль должен содержать минимум 8 символов')
+      setLoading(false)
+      return
+    }
     try {
       const res = await fetch('/api/auth/register', {
         method: 'POST',
@@ -43,6 +54,12 @@ export default function Register() {
     }
   }
 
+  function validateEmail(input: string) {
+    return /^\S+@\S+\.\S+$/.test(input)
+  }
+
+  const isValid = validateEmail(email) && password.length >= 8
+
   return (
     <main style={{ padding: 24 }}>
       <h1>Регистрация</h1>
@@ -53,12 +70,12 @@ export default function Register() {
         <label style={{ display: 'block', marginBottom: 8 }}>Email</label>
         <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@example.com" style={{ width: '100%', marginBottom: 12 }} />
 
-        <label style={{ display: 'block', marginBottom: 8 }}>Пароль</label>
+        <label style={{ display: 'block', marginBottom: 8 }}>Пароль (мин 8 символов)</label>
         <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Пароль" style={{ width: '100%', marginBottom: 12 }} />
 
         {error && <div style={{ color: 'red', marginBottom: 12 }}>{error}</div>}
 
-        <button type="submit" disabled={loading}>{loading ? 'Регистрация...' : 'Зарегистрироваться'}</button>
+        <button type="submit" disabled={loading || !isValid}>{loading ? 'Регистрация...' : 'Зарегистрироваться'}</button>
       </form>
     </main>
   )
