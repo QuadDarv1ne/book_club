@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next'
-import { prisma } from '../../../../lib/prisma'
+import { prisma } from '@lib/prisma'
 import crypto from 'crypto'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
