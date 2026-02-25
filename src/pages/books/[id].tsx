@@ -143,7 +143,12 @@ export default function BookPage() {
           </div>
 
           {session && (
-            <div style={{ marginTop: 24, paddingTop: 16, borderTop: '1px solid var(--border-color)' }}>
+            <div style={{ marginTop: 24, paddingTop: 16, borderTop: '1px solid var(--border-color)', display: 'flex', gap: 8 }}>
+              <Link href={`/books/${id}/edit`} style={{ textDecoration: 'none' }}>
+                <Button variant="secondary" size="sm">
+                  Редактировать
+                </Button>
+              </Link>
               <Button variant="danger" size="sm" onClick={handleDelete}>
                 Удалить книгу
               </Button>
