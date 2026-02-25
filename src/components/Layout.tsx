@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { useSession, signOut } from 'next-auth/react'
 import { Container } from './ui/Container'
 import { Button } from './ui/Button'
+import { ThemeToggle } from './ui/ThemeToggle'
 
 export interface LayoutProps {
   children: ReactNode
@@ -69,13 +70,14 @@ export const Layout: React.FC<LayoutProps> = ({ children, title }) => {
             <Link href="/" style={logoStyles}>
               📚 Book Club
             </Link>
-            <div style={navLinksStyles}>
+            <div style={{ ...navLinksStyles, flex: 1, justifyContent: 'flex-end' }}>
               <Link href="/books" style={linkStyles}>
                 Книги
               </Link>
               <Link href="/clubs" style={linkStyles}>
                 Клубы
               </Link>
+              <ThemeToggle />
               {status === 'authenticated' ? (
                 <>
                   <Link href="/profile" style={linkStyles}>
