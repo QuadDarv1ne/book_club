@@ -246,37 +246,49 @@ export default function BookPage() {
           </Card>
         ) : (
           <div style={{ display: 'grid', gap: 16 }}>
-            {reviews.map((review: any) => (
-              <Card key={review.id}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    {review.user?.image && (
-                      <img
-                        src={review.user.image}
-                        alt={review.user.name || 'User'}
-                        style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover' }}
-                      />
-                    )}
-                    <div>
-                      <p style={{ fontWeight: 600, margin: 0 }}>
-                        {review.user?.name || review.user?.email || 'Аноним'}
-                      </p>
-                      <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: 0 }}>
-                        {new Date(review.createdAt).toLocaleDateString('ru-RU', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric'
-                        })}
-                      </p>
+            {reviews.map((review: any) => {
+              const isOwnReview = session?.user?.email === review.user?.email
+              return (
+                <Card key={review.id}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      {review.user?.image && (
+                        <img
+                          src={review.user.image}
+                          alt={review.user.name || 'User'}
+                          style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover' }}
+                        />
+                      )}
+                      <div>
+                        <p style={{ fontWeight: 600, margin: 0 }}>
+                          {review.user?.name || review.user?.email || 'Аноним'}
+                        </p>
+                        <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: 0 }}>
+                          {new Date(review.createdAt).toLocaleDateString('ru-RU', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                      <Badge variant={review.rating >= 4 ? 'success' : review.rating >= 3 ? 'warning' : 'danger'}>
+                        {'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}
+                      </Badge>
+                      {isOwnReview && (
+                        <Link href={`/reviews/${review.id}/edit?bookId=${id}`} style={{ textDecoration: 'none' }}>
+                          <Button variant="ghost" size="sm">
+                            Редактировать
+                          </Button>
+                        </Link>
+                      )}
                     </div>
                   </div>
-                  <Badge variant={review.rating >= 4 ? 'success' : review.rating >= 3 ? 'warning' : 'danger'}>
-                    {'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}
-                  </Badge>
-                </div>
-                <p style={{ lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{review.content}</p>
-              </Card>
-            ))}
+                  <p style={{ lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{review.content}</p>
+                </Card>
+              )
+            })}
           </div>
         )}
       </div>
