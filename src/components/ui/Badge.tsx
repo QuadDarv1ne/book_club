@@ -2,7 +2,7 @@ import React, { CSSProperties } from 'react'
 
 export interface BadgeProps {
   children: React.ReactNode
-  variant?: 'default' | 'success' | 'warning' | 'danger'
+  variant?: 'default' | 'primary' | 'secondary' | 'success' | 'warning' | 'danger'
   size?: 'sm' | 'md'
   style?: CSSProperties
   className?: string
@@ -30,6 +30,15 @@ export const Badge: React.FC<BadgeProps> = ({
     default: {
       backgroundColor: 'var(--bg-secondary, #eaeaea)',
       color: 'var(--text-primary, #333)',
+    },
+    primary: {
+      backgroundColor: 'var(--accent-color, #0070f3)',
+      color: 'white',
+    },
+    secondary: {
+      backgroundColor: 'var(--bg-secondary, #eaeaea)',
+      color: 'var(--text-secondary, #666)',
+      border: '1px solid var(--border-color, #ccc)',
     },
     success: {
       backgroundColor: 'var(--success-color, #28a745)',

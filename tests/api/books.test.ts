@@ -1,24 +1,13 @@
 import { createMocks } from 'node-mocks-http'
+import { prisma } from '../../__mocks__/prisma'
 
-// Мокаем Prisma перед импортом handler
-jest.mock('../../src/lib/prisma', () => ({
-  prisma: {
-    book: {
-      findMany: jest.fn(),
-      count: jest.fn(),
-      create: jest.fn(),
-    },
-  },
-}))
-
+// Mock getServerSession
 jest.mock('next-auth/next', () => ({
   getServerSession: jest.fn(),
 }))
 
-// Импортируем после моков
-import handler from '../../src/pages/api/books/index'
-import { prisma } from '../../src/lib/prisma'
 import { getServerSession } from 'next-auth/next'
+import handler from '../../src/pages/api/books/index'
 
 describe('/api/books/index', () => {
   beforeEach(() => jest.clearAllMocks())
@@ -28,8 +17,8 @@ describe('/api/books/index', () => {
       const books = [
         { id: '1', title: 'Book 1', author: 'Author 1', description: 'Desc 1', createdAt: new Date() }
       ]
-      ;(prisma as any).book.findMany.mockResolvedValue(books)
-      ;(prisma as any).book.count.mockResolvedValue(1)
+      ;(prisma.book.findMany as jest.Mock).mockResolvedValue(books)
+      ;(prisma.book.count as jest.Mock).mockResolvedValue(1)
 
       const { req, res } = createMocks({ method: 'GET', query: {} })
       await handler(req as any, res as any)
@@ -45,8 +34,8 @@ describe('/api/books/index', () => {
         description: 'Desc',
         createdAt: new Date()
       }))
-      ;(prisma as any).book.findMany.mockResolvedValue(books)
-      ;(prisma as any).book.count.mockResolvedValue(100)
+      ;(prisma.book.findMany as jest.Mock).mockResolvedValue(books)
+      ;(prisma.book.count as jest.Mock).mockResolvedValue(100)
 
       const { req, res } = createMocks({ method: 'GET', query: { page: '2', limit: '12' } })
       await handler(req as any, res as any)
@@ -72,13 +61,13 @@ describe('/api/books/index', () => {
 
     it('creates book when valid', async () => {
       ;(getServerSession as jest.Mock).mockResolvedValue({ user: { email: 'a@b.com' } })
-      ;(prisma as any).book.create.mockResolvedValue({ id: '1', title: 'Test', author: 'Author' })
+      ;(prisma.book.create as jest.Mock).mockResolvedValue({ id: '1', title: 'Test', author: 'Author' })
 
       const { req, res } = createMocks({ method: 'POST', body: { title: 'Test', author: 'Author' } })
       await handler(req as any, res as any)
 
       expect(res._getStatusCode()).toBe(201)
-      expect((prisma as any).book.create).toHaveBeenCalled()
+      expect(prisma.book.create).toHaveBeenCalled()
     })
   })
 })
