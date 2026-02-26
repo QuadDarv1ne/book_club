@@ -74,6 +74,17 @@ export default function BookPage() {
     }
   }
 
+  const handleDeleteReview = async (reviewId: string) => {
+    if (!confirm('Вы уверены, что хотите удалить рецензию?')) return
+
+    const res = await fetch(`/api/reviews/${reviewId}`, { method: 'DELETE' })
+    if (res.ok) {
+      mutate(`/api/books/${id}/reviews`)
+    } else {
+      setError('Ошибка при удалении рецензии')
+    }
+  }
+
   const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
@@ -346,11 +357,16 @@ export default function BookPage() {
                         {'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}
                       </Badge>
                       {isOwnReview && (
-                        <Link href={`/reviews/${review.id}/edit?bookId=${id}`} style={{ textDecoration: 'none' }}>
-                          <Button variant="ghost" size="sm">
-                            Редактировать
+                        <>
+                          <Link href={`/reviews/${review.id}/edit?bookId=${id}`} style={{ textDecoration: 'none' }}>
+                            <Button variant="ghost" size="sm">
+                              Редактировать
+                            </Button>
+                          </Link>
+                          <Button variant="danger" size="sm" onClick={() => handleDeleteReview(review.id)}>
+                            Удалить
                           </Button>
-                        </Link>
+                        </>
                       )}
                     </div>
                   </div>
