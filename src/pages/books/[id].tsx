@@ -163,6 +163,16 @@ export default function BookPage() {
       <div style={{ display: 'grid', gap: 24, gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))' }}>
         {/* Информация о книге */}
         <Card title="О книге">
+          {book.coverImage && (
+            <div style={{ marginBottom: 16, textAlign: 'center' }}>
+              <img
+                src={book.coverImage}
+                alt={book.title}
+                style={{ maxWidth: 200, maxHeight: 300, borderRadius: 8, objectFit: 'cover' }}
+                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+              />
+            </div>
+          )}
           {book.author && (
             <p style={{ fontSize: '16px', marginBottom: 8 }}>
               <strong>Автор:</strong> {book.author}

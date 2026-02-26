@@ -29,6 +29,7 @@ model Book {
   title       String
   author      String?
   description String?
+  coverImage  String?
   createdAt   DateTime @default(now())
 
   reviews     Review[]

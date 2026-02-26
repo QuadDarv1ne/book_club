@@ -174,6 +174,16 @@ export default function Books() {
               style={{ height: '100%', transition: 'transform 0.2s, box-shadow 0.2s' }}
               className="book-card"
             >
+              {book.coverImage && (
+                <div style={{ marginBottom: 12, textAlign: 'center' }}>
+                  <img
+                    src={book.coverImage}
+                    alt={book.title}
+                    style={{ maxWidth: 120, maxHeight: 180, borderRadius: 6, objectFit: 'cover' }}
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                  />
+                </div>
+              )}
               {book.description && (
                 <p style={{
                   color: 'var(--text-secondary)',

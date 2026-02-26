@@ -14,6 +14,7 @@ export default function NewBook() {
   const [title, setTitle] = useState('')
   const [author, setAuthor] = useState('')
   const [description, setDescription] = useState('')
+  const [coverImage, setCoverImage] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -32,7 +33,7 @@ export default function NewBook() {
       const res = await fetch('/api/books', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, author: author || null, description: description || null })
+        body: JSON.stringify({ title, author: author || null, description: description || null, coverImage: coverImage || null })
       })
 
       if (!res.ok) {
@@ -94,6 +95,14 @@ export default function NewBook() {
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Краткое описание книги"
             rows={4}
+            disabled={isSubmitting}
+          />
+
+          <Input
+            label="Обложка (URL)"
+            value={coverImage}
+            onChange={(e) => setCoverImage(e.target.value)}
+            placeholder="https://example.com/cover.jpg"
             disabled={isSubmitting}
           />
 
