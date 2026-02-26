@@ -282,7 +282,10 @@ export default function BookPage() {
         {session && reviews?.some((r: any) => r.user?.email === session.user?.email) && (
           <Card>
             <Alert variant="info">
-              Вы уже оставили рецензию на эту книгу
+              Вы уже оставили рецензию на эту книгу.{' '}
+              <Link href={`/reviews/${reviews.find((r: any) => r.user?.email === session.user?.email)?.id}/edit?bookId=${id}`}>
+                Редактировать
+              </Link>
             </Alert>
           </Card>
         )}
