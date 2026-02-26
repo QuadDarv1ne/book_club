@@ -12,6 +12,12 @@ import { useSession } from 'next-auth/react'
 
 const fetcher = (url: string) => fetch(url).then(r => r.json())
 
+const statusLabels: Record<string, string> = {
+  want_to_read: '📚 Хочу прочитать',
+  reading: '📖 Читаю',
+  read: '✅ Прочитано'
+}
+
 export default function BookPage() {
   const router = useRouter()
   const { id } = router.query
@@ -25,6 +31,37 @@ export default function BookPage() {
 
   const { data: book, error: bookError } = useSWR(id ? `/api/books/${id}` : null, fetcher)
   const { data: reviews, error: reviewsError } = useSWR(id ? `/api/books/${id}/reviews` : null, fetcher)
+  const { data: userBook } = useSWR(session && id ? `/api/books/${id}/user-book` : null, fetcher)
+
+  const [selectedStatus, setSelectedStatus] = useState<string>(userBook?.status || 'want_to_read')
+
+  const handleStatusChange = async (status: string) => {
+    if (!session) {
+      router.push('/login')
+      return
+    }
+
+    setIsSubmitting(true)
+    try {
+      const res = await fetch(`/api/books/${id}/user-book`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
+      })
+
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}))
+        throw new Error(d.error || 'Ошибка при обновлении статуса')
+      }
+
+      setSelectedStatus(status)
+      mutate(`/api/books/${id}/user-book`)
+    } catch (err: any) {
+      setError(err.message)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
 
   const handleDelete = async () => {
     if (!confirm('Вы уверены, что хотите удалить эту книгу?')) return
@@ -141,6 +178,35 @@ export default function BookPage() {
               📝 {reviews?.length || 0} рецензий
             </Badge>
           </div>
+
+          {session && (
+            <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--border-color)' }}>
+              <p style={{ fontWeight: 600, marginBottom: 8, fontSize: '14px' }}>Статус:</p>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {(Object.keys(statusLabels) as Array<keyof typeof statusLabels>).map((status) => (
+                  <button
+                    key={status}
+                    onClick={() => handleStatusChange(status)}
+                    disabled={isSubmitting}
+                    style={{
+                      padding: '6px 12px',
+                      borderRadius: '6px',
+                      border: selectedStatus === status ? '2px solid var(--accent-color, #0070f3)' : '1px solid var(--border-color, #ccc)',
+                      backgroundColor: selectedStatus === status ? 'var(--accent-color, #0070f3)' : 'transparent',
+                      color: selectedStatus === status ? '#fff' : 'var(--text-primary, #333)',
+                      cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                      opacity: isSubmitting ? 0.6 : 1,
+                      fontSize: '13px',
+                      fontWeight: 500,
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    {statusLabels[status]}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {session && (
             <div style={{ marginTop: 24, paddingTop: 16, borderTop: '1px solid var(--border-color)', display: 'flex', gap: 8 }}>

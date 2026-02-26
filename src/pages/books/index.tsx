@@ -5,23 +5,45 @@ import { Layout } from '../../components/Layout'
 import { Card } from '../../components/ui/Card'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
+import { Badge } from '../../components/ui/Badge'
+import { useSession } from 'next-auth/react'
 
 const fetcher = (url: string) => fetch(url).then(r => r.json())
 
 const ITEMS_PER_PAGE = 9
 
+const statusFilters = [
+  { value: 'all', label: 'Все книги' },
+  { value: 'want_to_read', label: '📚 Хочу прочитать' },
+  { value: 'reading', label: '📖 Читаю' },
+  { value: 'read', label: '✅ Прочитано' }
+]
+
 export default function Books() {
+  const { data: session } = useSession()
   const [search, setSearch] = useState('')
   const [sortBy, setSortBy] = useState<'newest' | 'title' | 'author'>('newest')
+  const [statusFilter, setStatusFilter] = useState('all')
   const [currentPage, setCurrentPage] = useState(1)
-  const { data, error, isLoading } = useSWR('/api/books', fetcher)
+  const { data: books, error, isLoading } = useSWR('/api/books', fetcher)
+  const { data: userBooks } = useSWR(session ? '/api/user-books' : null, fetcher)
+
+  const userBooksMap = new Map(userBooks?.map((ub: any) => [ub.bookId, ub]))
 
   const filteredAndSortedBooks = useMemo(() => {
-    if (!data) return []
+    if (!books) return []
 
-    let result = [...data]
+    let result = [...books]
 
-    // Фильтрация
+    // Фильтрация по статусу
+    if (session && statusFilter !== 'all') {
+      const bookIds = userBooks
+        ?.filter((ub: any) => ub.status === statusFilter)
+        .map((ub: any) => ub.bookId) || []
+      result = result.filter((book: any) => bookIds.includes(book.id))
+    }
+
+    // Поиск
     if (search) {
       const searchLower = search.toLowerCase()
       result = result.filter((book: any) =>
@@ -44,7 +66,7 @@ export default function Books() {
     })
 
     return result
-  }, [data, search, sortBy])
+  }, [books, userBooks, session, statusFilter, search, sortBy])
 
   // Пагинация
   const totalPages = Math.ceil(filteredAndSortedBooks.length / ITEMS_PER_PAGE)
@@ -53,10 +75,24 @@ export default function Books() {
     currentPage * ITEMS_PER_PAGE
   )
 
-  // Сброс страницы при изменении поиска или сортировки
+  const getBookStatus = (bookId: string): string | undefined => (userBooksMap.get(bookId) as any)?.status
+
+  const getStatusBadge = (status?: string) => {
+    if (!status) return null
+    const badges: Record<string, { label: string; variant: string }> = {
+      want_to_read: { label: '📚 Хочу прочитать', variant: 'secondary' },
+      reading: { label: '📖 Читаю', variant: 'primary' },
+      read: { label: '✅ Прочитано', variant: 'success' }
+    }
+    const badge = badges[status]
+    if (!badge) return null
+    return <Badge variant={badge.variant as any}>{badge.label}</Badge>
+  }
+
+  // Сброс страницы при изменении фильтров
   useEffect(() => {
     setCurrentPage(1)
-  }, [search, sortBy])
+  }, [search, sortBy, statusFilter])
 
   return (
     <Layout title="Книги">
@@ -90,6 +126,30 @@ export default function Books() {
           <Button variant="primary">+ Добавить книгу</Button>
         </Link>
       </div>
+
+      {session && (
+        <div style={{ marginBottom: 16, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          {statusFilters.map((filter) => (
+            <button
+              key={filter.value}
+              onClick={() => setStatusFilter(filter.value)}
+              style={{
+                padding: '8px 16px',
+                borderRadius: '6px',
+                border: statusFilter === filter.value ? '2px solid var(--accent-color, #0070f3)' : '1px solid var(--border-color, #ccc)',
+                backgroundColor: statusFilter === filter.value ? 'var(--accent-color, #0070f3)' : 'transparent',
+                color: statusFilter === filter.value ? '#fff' : 'var(--text-primary, #333)',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: 500,
+                transition: 'all 0.2s'
+              }}
+            >
+              {filter.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {isLoading && <p>Загрузка книг...</p>}
 
@@ -126,6 +186,11 @@ export default function Books() {
                 }}>
                   {book.description}
                 </p>
+              )}
+              {session && getBookStatus(book.id) && (
+                <div style={{ marginTop: 12 }}>
+                  {getStatusBadge(getBookStatus(book.id))}
+                </div>
               )}
               <style jsx>{`
                 .book-card:hover {

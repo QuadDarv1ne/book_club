@@ -14,61 +14,17 @@ const fetcher = (url: string) => fetch(url).then(r => r.json())
 export default function Profile() {
   const router = useRouter()
   const { data: session, status } = useSession()
-  const [userReviews, setUserReviews] = useState<any[]>([])
-  const [userClubs, setUserClubs] = useState<any[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const { data: profileData, error } = useSWR(session ? '/api/profile' : null, fetcher)
 
-  useEffect(() => {
-    if (status === 'unauthenticated') router.push('/login')
-  }, [status, router])
-
-  // Загрузка рецензий пользователя
-  useEffect(() => {
-    if (!session?.user?.email) return
-
-    const loadUserData = async () => {
-      setIsLoading(true)
-      try {
-        // Загружаем все книги и фильтруем рецензии
-        const booksRes = await fetch('/api/books')
-        const books = await booksRes.json()
-        
-        const allReviews: any[] = []
-        for (const book of books) {
-          const reviewsRes = await fetch(`/api/books/${book.id}/reviews`)
-          const reviews = await reviewsRes.json()
-          const userBookReviews = reviews.filter((r: any) => r.user?.email === session.user?.email)
-          allReviews.push(...userBookReviews.map((r: any) => ({ ...r, book })))
-        }
-        
-        setUserReviews(allReviews.sort((a, b) => 
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        ))
-
-        // Загружаем клубы пользователя
-        const clubsRes = await fetch('/api/clubs')
-        const clubs = await clubsRes.json()
-        const userClubsData = clubs.filter((c: any) =>
-          c.memberships?.some((m: any) => m.user?.email === session.user?.email)
-        )
-        setUserClubs(userClubsData)
-      } catch (error) {
-        console.error('Error loading user data:', error)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    loadUserData()
-  }, [session?.user?.email])
-
-  if (status === 'loading' || isLoading) {
+  if (status === 'loading' || !profileData) {
     return (
       <Layout title="Профиль">
         <p>Загрузка...</p>
       </Layout>
     )
   }
+
+  const { user, stats, recentReviews, clubs } = profileData
 
   return (
     <Layout title="Профиль">
@@ -112,32 +68,59 @@ export default function Profile() {
       </Card>
 
       {/* Статистика */}
-      <div style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', marginBottom: 24 }}>
+      <div style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', marginBottom: 24 }}>
         <Card style={{ textAlign: 'center' }}>
           <div style={{ fontSize: 32, fontWeight: 700, color: 'var(--accent-color)' }}>
-            {userReviews.length}
+            {stats.totalBooks}
           </div>
-          <p style={{ margin: '8px 0 0', color: 'var(--text-secondary)' }}>Рецензий</p>
+          <p style={{ margin: '8px 0 0', color: 'var(--text-secondary)' }}>Всего книг</p>
         </Card>
         <Card style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 32, fontWeight: 700, color: 'var(--accent-color)' }}>
-            {userClubs.length}
+          <div style={{ fontSize: 32, fontWeight: 700, color: '#28a745' }}>
+            {stats.read}
           </div>
-          <p style={{ margin: '8px 0 0', color: 'var(--text-secondary)' }}>Клубов</p>
+          <p style={{ margin: '8px 0 0', color: 'var(--text-secondary)' }}>Прочитано</p>
+        </Card>
+        <Card style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 32, fontWeight: 700, color: '#0070f3' }}>
+            {stats.reading}
+          </div>
+          <p style={{ margin: '8px 0 0', color: 'var(--text-secondary)' }}>Читаю</p>
+        </Card>
+        <Card style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 32, fontWeight: 700, color: '#6c757d' }}>
+            {stats.wantToRead}
+          </div>
+          <p style={{ margin: '8px 0 0', color: 'var(--text-secondary)' }}>Хочу прочитать</p>
+        </Card>
+        <Card style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 32, fontWeight: 700, color: '#ffc107' }}>
+            ⭐ {stats.averageRating}
+          </div>
+          <p style={{ margin: '8px 0 0', color: 'var(--text-secondary)' }}>Средний рейтинг</p>
+        </Card>
+        <Card style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 32, fontWeight: 700, color: '#dc3545' }}>
+            {stats.booksThisYear}
+          </div>
+          <p style={{ margin: '8px 0 0', color: 'var(--text-secondary)' }}>Книг в {new Date().getFullYear()}</p>
         </Card>
       </div>
 
       {/* Мои рецензии */}
       <Card title="📝 Мои рецензии" style={{ marginBottom: 24 }}>
-        {userReviews.length === 0 ? (
+        {error && (
+          <Alert variant="error">Ошибка загрузки данных</Alert>
+        )}
+        {recentReviews?.length === 0 ? (
           <p style={{ color: 'var(--text-secondary)', fontStyle: 'italic' }}>
             У вас пока нет рецензий. <Link href="/books">Найдите книгу</Link> и поделитесь мнением!
           </p>
         ) : (
           <div style={{ display: 'grid', gap: 16 }}>
-            {userReviews.slice(0, 5).map((review) => (
-              <div key={review.id} style={{ 
-                padding: 16, 
+            {recentReviews?.slice(0, 5).map((review: any) => (
+              <div key={review.id} style={{
+                padding: 16,
                 border: '1px solid var(--border-color)',
                 borderRadius: 8
               }}>
@@ -167,44 +150,47 @@ export default function Profile() {
 
       {/* Мои клубы */}
       <Card title="👥 Мои клубы">
-        {userClubs.length === 0 ? (
+        {clubs?.length === 0 ? (
           <p style={{ color: 'var(--text-secondary)', fontStyle: 'italic' }}>
             Вы не состоите ни в одном клубе. <Link href="/clubs">Найдите клуб</Link> по интересам!
           </p>
         ) : (
           <div style={{ display: 'grid', gap: 12 }}>
-            {userClubs.map((club) => (
-              <Link key={club.id} href={`/clubs/${club.id}`} style={{ textDecoration: 'none' }}>
-                <div style={{
-                  padding: 12,
-                  border: '1px solid var(--border-color)',
-                  borderRadius: 6,
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  transition: 'background-color 0.2s'
-                }}
-                className="club-item"
-                >
-                  <div>
-                    <p style={{ margin: 0, fontWeight: 600 }}>{club.name}</p>
-                    {club.description && (
-                      <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--text-secondary)' }}>
-                        {club.description}
-                      </p>
-                    )}
+            {clubs?.map((m: any) => {
+              const club = m.club
+              return (
+                <Link key={club.id} href={`/clubs/${club.id}`} style={{ textDecoration: 'none' }}>
+                  <div style={{
+                    padding: 12,
+                    border: '1px solid var(--border-color)',
+                    borderRadius: 6,
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    transition: 'background-color 0.2s'
+                  }}
+                  className="club-item"
+                  >
+                    <div>
+                      <p style={{ margin: 0, fontWeight: 600 }}>{club.name}</p>
+                      {club.description && (
+                        <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--text-secondary)' }}>
+                          {club.description}
+                        </p>
+                      )}
+                    </div>
+                    <Badge variant={m.role === 'admin' ? 'primary' : 'secondary'}>
+                      {m.role === 'admin' ? '👑 Админ' : '👤 Участник'}
+                    </Badge>
+                    <style jsx>{`
+                      .club-item:hover {
+                        background-color: var(--bg-secondary);
+                      }
+                    `}</style>
                   </div>
-                  <Badge variant="secondary">
-                    👥 {club.memberships?.length || 0}
-                  </Badge>
-                  <style jsx>{`
-                    .club-item:hover {
-                      background-color: var(--bg-secondary);
-                    }
-                  `}</style>
-                </div>
-              </Link>
-            ))}
+                </Link>
+              )
+            })}
           </div>
         )}
       </Card>

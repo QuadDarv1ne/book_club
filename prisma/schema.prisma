@@ -21,6 +21,7 @@ model User {
   sessions       Session[]
   accounts       Account[]
   memberships    Membership[]
+  userBooks      UserBook[]
 }
 
 model Book {
@@ -31,6 +32,26 @@ model Book {
   createdAt   DateTime @default(now())
 
   reviews     Review[]
+  userBooks   UserBook[]
+}
+
+model UserBook {
+  id         String   @id @default(cuid())
+  status     String   @default("want_to_read") // want_to_read, reading, read
+  rating     Int?
+  notes      String?
+  startedAt  DateTime?
+  finishedAt DateTime?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  userId String
+  user   User @relation(fields: [userId], references: [id])
+
+  bookId String
+  book   Book @relation(fields: [bookId], references: [id])
+
+  @@unique([userId, bookId])
 }
 
 model Review {

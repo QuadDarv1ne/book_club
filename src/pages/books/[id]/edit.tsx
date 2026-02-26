@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import useSWR from 'swr'
-import Link from 'next/link'
+import { useSession } from 'next-auth/react'
 import { Layout } from '../../../components/Layout'
 import { Card } from '../../../components/ui/Card'
 import { Button } from '../../../components/ui/Button'
 import { Input } from '../../../components/ui/Input'
 import { Textarea } from '../../../components/ui/Textarea'
 import { Alert } from '../../../components/ui/Alert'
-import { useSession } from 'next-auth/react'
+import Link from 'next/link'
 
 const fetcher = (url: string) => fetch(url).then(r => r.json())
 
@@ -16,14 +16,13 @@ export default function EditBook() {
   const router = useRouter()
   const { id } = router.query
   const { data: session, status } = useSession()
+  const { data: book, error: bookError } = useSWR(id ? `/api/books/${id}` : null, fetcher)
 
   const [title, setTitle] = useState('')
   const [author, setAuthor] = useState('')
   const [description, setDescription] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
-
-  const { data: book, error: bookError } = useSWR(id ? `/api/books/${id}` : null, fetcher)
 
   useEffect(() => {
     if (book) {
@@ -33,13 +32,7 @@ export default function EditBook() {
     }
   }, [book])
 
-  useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/login')
-    }
-  }, [status, router])
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
 
@@ -54,13 +47,12 @@ export default function EditBook() {
       const res = await fetch(`/api/books/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: title.trim(), author: author.trim() || null, description: description.trim() || null })
+        body: JSON.stringify({ title, author: author || null, description: description || null })
       })
 
-      const data = await res.json()
-
       if (!res.ok) {
-        throw new Error(data.error || 'Ошибка при обновлении книги')
+        const d = await res.json().catch(() => ({}))
+        throw new Error(d.error || 'Ошибка при обновлении книги')
       }
 
       router.push(`/books/${id}`)
@@ -79,13 +71,23 @@ export default function EditBook() {
     )
   }
 
-  if (bookError) {
+  if (bookError || !book) {
     return (
       <Layout title="Редактировать книгу">
-        <Alert variant="error">Ошибка загрузки книги</Alert>
+        <Alert variant="error">Книга не найдена</Alert>
         <Link href="/books">
           <Button variant="secondary">← Назад к книгам</Button>
         </Link>
+      </Layout>
+    )
+  }
+
+  if (!session) {
+    return (
+      <Layout title="Редактировать книгу">
+        <Alert variant="error">
+          Для редактирования книги необходимо <a href="/login">войти</a>
+        </Alert>
       </Layout>
     )
   }
@@ -99,6 +101,7 @@ export default function EditBook() {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Введите название книги"
+            required
             disabled={isSubmitting}
           />
 
